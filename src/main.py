@@ -2,7 +2,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 import lasagne
-
+import pickle
 import sys
 import time
 import utils
@@ -207,8 +207,8 @@ def main(args):
 
     logging.info('-' * 50)
     logging.info('Build dictionary..')
-    word_dict = utils.build_dict(train_examples[0] + train_examples[1] + train_examples[2], args.max_vocab_size)
-
+    #word_dict = utils.build_dict(train_examples[0] + train_examples[1] + train_examples[2], args.max_vocab_size)
+    word_dict = pickle.load(open("../obj/dict.pkl", "rb"))
     logging.info('-' * 50)
     embeddings = utils.gen_embeddings(word_dict, args.embedding_size, args.embedding_file)
     (args.vocab_size, args.embedding_size) = embeddings.shape
