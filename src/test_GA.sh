@@ -1,6 +1,6 @@
-model=model_GA.pkl.gz
+model=../obj/model_GA.pkl.gz
 gpu=gpu1
-option_suffix="-num_GA_layers 2 -hidden_size 64"
+option_suffix="-num_GA_layers 1 -hidden_size 128"
 echo "!!!test"
 THEANO_FLAGS="mode=FAST_RUN,device=${gpu},floatX=float32" stdbuf -i0 -e0 -o0 python main.py -train_file ../data/data/train -dev_file ../data/data/test -embedding_size 100 -pre_trained ${model} -test_only True -model GA ${option_suffix}
 echo "!!!dev"
