@@ -1,8 +1,8 @@
 # RACE Reading Comprehension Task
 
-Code for the paper:
+Code for the paper: [RACE: Large-scale ReAding Comprehension Dataset From Examination](https://arxiv.org/pdf/1704.04683.pdf). Guokun Lai*, Qizhe Xie*, Hanxiao Liu, Yiming Yang and Eduard Hovy. EMNLP 2017
 
-[RACE: Large-scale ReAding Comprehension Dataset From Examination](https://arxiv.org/pdf/1704.04683.pdf). Guokun Lai*, Qizhe Xie*, Hanxiao Liu, Yiming Yang and Eduard Hovy. EMNLP 2017
+[Leaderboard of RACE](http://www.qizhexie.com//data/RACE_leaderboard)
 
 ## Dependencies
 * Python 2.7
