@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     data = "../data/rationale"
     #raw_data = "../data/RACE"
-    raw_data = "D:\\yhy\\study\\BME_Lab\\SAR\\ye\\5datasets\\Rationale\\database2.1\\database"
+    raw_data = "..\\5datasets\\Rationale\\database2.1\\database"
 
     cnt = 0
     avg_article_length = 0
