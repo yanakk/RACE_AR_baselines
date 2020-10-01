@@ -1,3 +1,6 @@
+'''
+date: 01/10/2020
+'''
 import numpy as np
 import theano
 import theano.tensor as T
@@ -13,6 +16,9 @@ import lasagne.layers as L
 from nn_layers import QuerySliceLayer
 from nn_layers import AttentionSumLayer
 from nn_layers import GatedAttentionLayerWithQueryAttention
+
+datatype = ['../data/only_r_rationale/Fact','../data/only_r_rationale/LPurpose','../data/only_r_rationale/GPurpose','../data/only_r_rationale/Mainly',
+            '../data/only_r_rationale/Title','../data/only_r_rationale/Global','../data/only_r_rationale/Local']
 
 def gen_examples(x1, x2, x3, y, batch_size, concat=False):
     """
@@ -210,7 +216,7 @@ def main(args):
     #word_dict = utils.build_dict(train_examples[0] + train_examples[1] + train_examples[2], args.max_vocab_size)
     word_dict = pickle.load(open("../obj/dict.pkl", "rb"))
     logging.info('-' * 50)
-    embeddings = utils.gen_embeddings(word_dict, args.embedding_size, args.embedding_file)
+    embeddings = utils.gen_embeddings(word_dict, args.embedding_size, args.embedding_file)  # EMBEDDING
     (args.vocab_size, args.embedding_size) = embeddings.shape
     logging.info('Compile functions..')
     train_fn, test_fn, params, all_params = build_fn(args, embeddings)
@@ -305,5 +311,9 @@ if __name__ == '__main__':
                             filemode='w', level=logging.DEBUG,
                             format='%(asctime)s %(message)s', datefmt='%m-%d %H:%M')
 
-    logging.info(' '.join(sys.argv))
-    main(args)
+    for route in datatype:
+        args.dev_file = route
+        print ('*******************',route,'*********************')
+        logging.info(' '.join(sys.argv))
+        main(args)
+
