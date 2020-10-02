@@ -10,7 +10,9 @@ import copy
 import utils
 
 mode = 1
-iteration = 10   # Num of rationales
+iteration = 0   # Num of rationales
+RAW_PATH = "..\\..\\ye\\LabeledFiles"
+GEN_PATH = "../data/control_group"
 
 def tokenize(st):
     #TODO: The tokenizer's performance is suboptimal
@@ -40,11 +42,11 @@ if __name__ == "__main__":
     class_set = ["Fact", "Mainly", "GPurpose", "LPurpose", "Local","Global", "Title"]
 
     #raw_data = "../data/RACE"
-    raw_data = "..\\..\\ye\\LabeledFiles"
+    raw_data = RAW_PATH
 
     if mode == 0:
         # PASSAGE 
-        data = "../data/new_r_rationale"
+        data = GEN_PATH
         cnt = 0
         avg_article_length = 0
         avg_question_length = 0
@@ -79,7 +81,7 @@ if __name__ == "__main__":
         print "avg option length", avg_option_length * 1. / (num_que * 4)'''
 
     if mode == 1:
-        data = "../data/only_r_rationale"
+        data = GEN_PATH
         cnt = 0
         avg_article_length = 0
         avg_question_length = 0
@@ -114,7 +116,7 @@ if __name__ == "__main__":
                 dup_ratio = copy.deepcopy(obj["mark_ratio"])
                 rationale = []; rpt = iteration
 
-                while(rpt != 0 or len(rationale)==0):
+                while(rpt != 0 or len(rationale)==0 and iteration!=0):
                     iter = rpt
                     rpt = 0
                     for j in range(iter):
