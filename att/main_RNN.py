@@ -15,11 +15,18 @@ from nn_layers import AttentionSumLayer
 from nn_layers import GatedAttentionLayerWithQueryAttention
 import matplotlib.pyplot as plt
 import random
+import csv
 from sklearn.decomposition import PCA
 from sklearn import preprocessing
+from lasagne import nonlinearities
 
-EPOCH = 5
+EPOCH = 10
 DEV_RATIO = 0.3
+TYPE = 'Local'   # Fact GPurpose LPurpose Mainly Title Global Local
+RAW = False
+SAG = False
+LR = 3e-4   # 3e-4  1e-5
+RS = 1000   # 1000 800 600 400 200
 
 def gen_examples(x1, x2, x3, y, x4, batch_size, concat=False):
     """
@@ -120,10 +127,19 @@ def build_fn(args, embeddings):
 #    b_mlp = np.array([0.])
 #    l_weight = lasagne.layers.DenseLayer(l_in4, 1, num_leading_axes=-1,
 #                                         name='w_dense', W=weight_mlp_np, b=b_mlp)
-    # pass a Linear layer and get human ATT
-    l_weight = lasagne.layers.DenseLayer(l_in4, 1, num_leading_axes=-1,
+    # pass a Linear layer and get human ATT  l_weight: batch x word_num x 1     activation -- sigmoid
+    l_weight = lasagne.layers.DenseLayer(l_in4, 1, num_leading_axes=-1,nonlinearity=nonlinearities.sigmoid,
                                          name='w_dense')
+
     att = nn_layers.WeightedAverageLayer([network1, l_weight, l_mask1], name='w_aver')
+    if RAW:
+        att = nn_layers.WeightedAverageLayer([network1, l_in4, l_mask1], name='w_aver')
+    if SAG:
+        # network1 1x1 conv
+        # l_in4 1x1 conv
+
+        pass
+
     #options
     network3 = nn_layers.stack_rnn(l_emb3, l_mask3, args.num_layers, args.hidden_size,
                                    grad_clipping=args.grad_clipping,
@@ -135,6 +151,8 @@ def build_fn(args, embeddings):
     network3 = lasagne.layers.ReshapeLayer(network3, (in_x1.shape[0], 4, args.rnn_output_size))
     #answer
     network = nn_layers.BilinearDotLayer([network3, att], args.rnn_output_size)
+    # if not args.tune_embedding:
+    #     network.params[network.W].remove('trainable')
     #parameter sharing
     params_initial = lasagne.layers.get_all_params(network)
     params_set = []
@@ -242,8 +260,6 @@ def tuple_part(tuple_x, y_index):
         tuple_y +=  (ele_y,)
     return tuple_y
 
-
-
 def Prepocessing_func(Feas_train, Feas_test, varian_ratio_tol=1):
     """
     Data preprocessing: PCA and normalization
@@ -292,7 +308,6 @@ def PrepocessingApply_func(Feas_test):
     Feas_test = preprossors['scaler2'].transform(Feas_test)
     return Feas_test
 
-
 def FeaExtract(feaList):
     fea_flat = []
     for feaList_tmp in feaList:
@@ -308,7 +323,6 @@ def FeaMerge(fea_flat, fea_ref):
         fea_merge.append(fea_flat_tmp)
         m = m+len(fea_ref_tmp)
     return fea_merge
-    
 
 def main(args):
     logging.info('-' * 50)
@@ -318,7 +332,7 @@ def main(args):
         all_examples = utils.load_data(args.all_file, relabeling=args.relabeling)
         dev_ratio = args.dev_ratio
         sample_index = np.arange(len(all_examples[0]))
-        random.seed(1000)
+        random.seed(RS)
         dev_index= random.sample(sample_index, int(dev_ratio*len(sample_index)))
         train_index  = np.setdiff1d(sample_index, dev_index)
         dev_examples = tuple_part(all_examples, dev_index)
@@ -357,7 +371,6 @@ def main(args):
     logging.info('Done.')
     logging.info('-' * 50)
     logging.info(args)
-
     logging.info('-' * 50)
     logging.info('Intial test..')
     dev_x1, dev_x2, dev_x3, dev_y, dev_x4 = utils.vectorize(dev_examples, word_dict, sort_by_len=not args.test_only, concat=args.concat)
@@ -368,6 +381,7 @@ def main(args):
     dev_acc, rediction = eval_acc(test_fn, all_dev)
     
     logging.info('Dev accuracy: %.2f %%' % dev_acc)
+    ini_dev_acc = dev_acc
     print(dev_acc.mean())
     
     best_dev_acc = dev_acc
@@ -393,13 +407,14 @@ def main(args):
             train_loss = train_fn(mb_x1, mb_mask1, mb_x3, mb_mask3, mb_y, mb_x4)
 #            if idx % 100 == 0:
             if epoch % 2 == 0:
-                logging.info('#Examples = %d, max_len = %d' % (len(mb_x1), mb_x1.shape[1]))
-                logging.info('Epoch = %d, iter = %d (max = %d), loss = %.2f, elapsed time = %.2f (s)' % (epoch, idx, len(all_train), train_loss, time.time() - start_time))
+                # logging.info('#Examples = %d, max_len = %d' % (len(mb_x1), mb_x1.shape[1]))
+                # logging.info('Epoch = %d, iter = %d (max = %d), loss = %.2f, elapsed time = %.2f (s)' % (epoch, idx, len(all_train), train_loss, time.time() - start_time))
+                pass
             n_updates += 1
 
             if n_updates % args.eval_iter == 0:
 #                print([x.get_value() for x in params])
-                print(params)
+                #print(params)
                 assert (para1 == all_params[0].get_value()).all()
                 para1 = all_params[0].get_value()
                 samples = sorted(np.random.choice(args.num_train, min(args.num_train, args.num_dev),
@@ -416,6 +431,7 @@ def main(args):
                 logging.info('train accuracy: %.2f %%' % train_acc)
                 dev_acc, pred = eval_acc(test_fn, all_dev)
                 logging.info('Dev accuracy: %.2f %%' % dev_acc)
+                print(dev_acc)
                 all_acc, pred = eval_acc(test_fn, all_train + all_dev)
                 logging.info('all accuracy: %.2f %%' % all_acc)
                 logging.info('-' * 50)
@@ -428,12 +444,12 @@ def main(args):
                                  % (epoch, n_updates, best_train_acc))
                     utils.save_params(args.model_file, all_params, epoch=epoch, n_updates=n_updates, )
                     
-    return best_dev_acc, best_train_acc
+    return best_dev_acc, best_train_acc, ini_dev_acc
 
 if __name__ == '__main__':
     args = config.get_args()
     #set Type
-    args.Type = 'Fact'
+    args.Type = TYPE
     args.pca_ratio = 1
     args.all_file = args.all_file + '/' + args.Type
     args.dev_file = args.dev_file + '/' + args.Type
@@ -443,8 +459,10 @@ if __name__ == '__main__':
     args.preprocessor = args.preprocessor + args.Type + str(args.pca_ratio) + '.pickle'
     args.tune_embedding = False
     args.tune_sar = True
+
     args.num_epoches = EPOCH
     args.dev_ratio = DEV_RATIO
+    args.learning_rate = LR
     # args.eval_iter = 18
     
     np.random.seed(args.random_seed)
@@ -482,9 +500,13 @@ if __name__ == '__main__':
 
     logging.info(' '.join(sys.argv))
 #    dev_acc, n_examples, pred, all_examples, alpha = main(args)
-    best_dev_acc, best_train_acc = main(args)
-    logging.info('Best dev accuracy: acc = %.2f %%' % (best_dev_acc))
-    logging.info('Best train accuracy: acc = %.2f %%' % (best_train_acc))
+    for iter in range(1,6):
+        best_dev_acc, best_train_acc,ini_dev_acc = main(args)
+        print('Params: ', TYPE, RAW, RS)
+        logging.info('Best dev accuracy: acc = %.2f %%' % (best_dev_acc))
+        logging.info('Best train accuracy: acc = %.2f %%' % (best_train_acc))
+        logging.info('Initial dev accuracy: acc = %.2f %%' % (ini_dev_acc))
+        RS -= 200
     
 #    Label=[examples_ex[-1] for examples_ex in all_examples]
 #    Label=np.array(Label)
